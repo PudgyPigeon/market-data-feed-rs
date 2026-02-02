@@ -1,0 +1,8 @@
+# Nix build outputs (symlinks)
+result
+result-*
+results.sarif
+
+# Rust build artifacts
+app/target
+target
