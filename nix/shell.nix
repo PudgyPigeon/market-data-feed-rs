@@ -12,6 +12,8 @@ pkgs.mkShell rec {
   buildInputs = dependencies.appBuild;
   
   shellHook = ''
+      export PKG_CONFIG_PATH="${pkgs.libpcap}/lib/pkgconfig"
+      export LD_LIBRARY_PATH="${pkgs.libpcap}/lib:$LD_LIBRARY_PATH"
       echo "--------------------------------------------------"
       echo "✅ Development Environment Loaded"
       echo "💡 Type 'dev' to run your Local CI + App"

@@ -2,6 +2,7 @@
 result
 result-*
 results.sarif
+.direnv
 
 # Rust build artifacts
 app/target

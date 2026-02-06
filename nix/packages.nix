@@ -10,7 +10,9 @@ let
     targets = [ "x86_64-unknown-linux-gnu" ];
   };
 
-  appBuild = [];
+  appBuild = [
+    pkgs.libpcap
+  ];
 
   nativeBuild = [
     pkgs.pkg-config

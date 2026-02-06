@@ -11,7 +11,7 @@ in
     version = "0.0.1";
 
     nativeBuildInputs = dependencies.nativeBuild;
-    buildInputs = dependencies.bevyBuild;
+    buildInputs = dependencies.appBuild;
 
     src = cargoPath;
     cargoLock.lockFile = "${cargoPath}/Cargo.lock";

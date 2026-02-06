@@ -59,7 +59,7 @@ let
     ENV="dev"
     ${setup-env}
     ${common-ci}
-    echo -e "🚀 ''${B_GREEN}[5/5] Launching Bevy App...''${NC}"
+    echo -e "🚀 ''${B_GREEN}[5/5] Launching App...''${NC}"
     ${rustToolChain}/bin/cargo run \
         --manifest-path Cargo.toml \
         -- "$@"

@@ -1,18 +1,62 @@
-use std::env;
+use std::{env, str};
+use pcap::Capture;
+use std::path::{Path, PathBuf};
 
-fn main() {
-    let args = env::args().skip(1);
-    println!("Starting the program with args: {:?}", args);
+struct Config {
+    reorder: bool,
+    input_path: PathBuf,
+}
 
-    let mut _reorder = false;
-    let mut _input_path = None;
-
-    for arg in args {
-        match arg.as_str() {
-            "-r" => _reorder = true,
-            path if !path.starts_with("-") => _input_path = Some(path.to_string()),
-            _ => eprintln!("Warning! Unknown argument '{}'", arg),
+impl Config {
+    fn new() -> Self {
+        Self {
+            reorder: false,
+            input_path: PathBuf::from("app/assets/mdf-kospi200.20110216-0.pcap"),
         }
     }
-    println!("Done with everything!")
+
+    fn set_reorder(&mut self, val: bool) {
+        self.reorder = val;
+    }
+
+    fn set_input_path(&mut self, path: PathBuf) {
+        self.input_path = path;
+    }
+
+    fn parse_input_args<I: Iterator<Item = String>>(mut self, args: I) -> Self {
+        for arg in args.skip(1) {
+            match arg.as_str() {
+                "-r" => self.set_reorder(true),
+                path if !path.starts_with('-') && Self::is_pcap_file(path) => {
+                    self.set_input_path(PathBuf::from(path))
+                }
+                _ => eprintln!("Unknown argument: '{}'", arg),
+            }
+        }
+        self
+    }
+
+    fn is_pcap_file(arg: &str) -> bool {
+        Path::new(arg).extension().is_some_and(|ext| ext == "pcap")
+    }
+}
+
+fn run(config: Config) {
+    let mut cap = match Capture::from_file(&config.input_path) {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("Error opening pcap file: {}", e);
+            return;
+        }
+    };
+    println!("Successfully opened: {:?}", config.input_path);
+    while let Ok(packet) = cap.next_packet() {
+        println!("Received packet with length: {}", packet.header.len);
+        println!("Raw Data: {:?}", packet.data)
+    }
+}
+
+fn main() {
+    let config = Config::new().parse_input_args(env::args());
+    run(config)
 }

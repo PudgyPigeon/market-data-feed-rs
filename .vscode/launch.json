@@ -12,7 +12,7 @@
                 ]
             },
             "program": "${workspaceFolder}/target/debug/market-data-feed-rs",
-            "args": ["-r", "input.txt"], 
+            "args": ["-r", "app/assets/mdf-kospi200.20110216-0.pcap"], 
             "cwd": "${workspaceFolder}"
         }
     ]
