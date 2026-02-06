@@ -1,6 +1,6 @@
-use std::{env, str};
 use pcap::Capture;
 use std::path::{Path, PathBuf};
+use std::{env, str};
 
 struct Config {
     reorder: bool,
@@ -23,6 +23,10 @@ impl Config {
         self.input_path = path;
     }
 
+    fn is_pcap_file(arg: &str) -> bool {
+        Path::new(arg).extension().is_some_and(|ext| ext == "pcap")
+    }
+
     fn parse_input_args<I: Iterator<Item = String>>(mut self, args: I) -> Self {
         for arg in args.skip(1) {
             match arg.as_str() {
@@ -35,10 +39,26 @@ impl Config {
         }
         self
     }
+}
 
-    fn is_pcap_file(arg: &str) -> bool {
-        Path::new(arg).extension().is_some_and(|ext| ext == "pcap")
-    }
+#[derive(Debug)]
+struct Quote<'packet> {
+    issue_code: &'packet str,
+    issue_seq_no: &'packet str,
+    data_type: &'packet str,
+    info_type: &'packet str,
+    market_type: &'packet str,
+    accept_time: &'packet str,
+    total_bid_vol: &'packet str,
+    total_ask_vol: &'packet str,
+    best_bids: [PriceQty<'packet>; 5],
+    best_asks: [PriceQty<'packet>; 5],
+}
+
+#[derive(Debug)]
+struct PriceQty<'packet> {
+    price: &'packet str,
+    qty: &'packet str,
 }
 
 fn run(config: Config) {

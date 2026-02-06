@@ -7,7 +7,7 @@ dev app/assets/mdf-kospi200.20110216-0.pcap
 ```
 Enter the above command to run the command with the associated `.pcap` file.
 
-You can also add an optional `-r` flag before or after the input path to reverse the order.
+You can also add an optional `-r` flag before or after the input path to reverse the order (To be implemented soon).
 
 ```
 dev -r app/assets/mdf-kospi200.20110216-0.pcap 
