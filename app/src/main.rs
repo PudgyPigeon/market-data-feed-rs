@@ -6,18 +6,18 @@ mod quote;
 use config::Config;
 use pcap::Capture;
 use std::env;
+use std::time::Instant;
 
 fn run(config: Config) {
-    debug_init!(count);
-
-    let mut cap = Capture::from_file(&config.input_path)
-        .expect("ERROR: Could not open pcap file or invalid path");
+    let mut cap = Capture::from_file(&config.input_path).unwrap();
+    let mut processor = processor::Processor::new(config.reorder);
+    let mut sequence_counter: u64 = 0;
 
     loop {
         match cap.next_packet() {
             Ok(packet) => {
-                processor::process_packet(&packet, config.packet_offset);
-                debug_break!(count, 100);
+                processor.process_packet(&packet.data, config.packet_offset, sequence_counter);
+                sequence_counter += 1;
             }
             Err(pcap::Error::NoMorePackets) => {
                 eprintln!("Reached the end of the .pcap file. Breaking loop.");
@@ -32,5 +32,7 @@ fn run(config: Config) {
 }
 
 fn main() {
+    let start = Instant::now();
     run(Config::build(env::args()));
+    eprintln!("Total execution time: {:?}", start.elapsed());
 }

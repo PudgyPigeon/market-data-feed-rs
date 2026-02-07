@@ -1,21 +1,73 @@
 use crate::protocol;
+use std::cmp::Ordering;
 use std::str;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct PriceQty<'packet> {
     pub price: &'packet str,
     pub qty: &'packet str,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct Quote<'packet> {
     pub issue_code: &'packet str,
     pub bids: [PriceQty<'packet>; 5],
     pub asks: [PriceQty<'packet>; 5],
-    pub accept_time: &'packet str, // HHMMSSuu
+    pub accept_time: u64, // HHMMSSuu
+}
+
+#[derive(Debug, Eq, PartialEq, Clone, Copy)]
+pub struct QuoteOwned {
+    pub accept_time: u64,
+    pub sequence_counter: u64,
+    pub issue_code: [u8; 12],
+    pub bids: [([u8; 10], [u8; 10]); 5],
+    pub asks: [([u8; 10], [u8; 10]); 5],
+}
+
+impl Ord for QuoteOwned {
+    // By flipping self and other comparison order we turn BinaryMaxHeap into MinHeap
+    fn cmp(&self, other: &Self) -> Ordering {
+        match other.accept_time.cmp(&self.accept_time) {
+            // If times are equal, check sequence
+            Ordering::Equal => other.sequence_counter.cmp(&self.sequence_counter),
+            // Otherwise return Ord time comparison
+            ord => ord,
+        }
+    }
+}
+
+impl PartialOrd for QuoteOwned {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+// To avoid heap allocation
+fn str_to_fixed<const N: usize>(s: &str) -> [u8; N] {
+    let mut arr = [0u8; N];
+    let bytes = s.as_bytes();
+    let len = bytes.len().min(N);
+    arr[..len].copy_from_slice(&bytes[..len]);
+    arr
 }
 
 impl<'packet> Quote<'packet> {
+    pub fn to_owned(&self, sequence_counter: u64) -> QuoteOwned {
+        let mut code = [0u8; 12];
+        let bytes = self.issue_code.as_bytes();
+        let len = bytes.len().min(12);
+        code[..len].copy_from_slice(&bytes[..len]);
+
+        QuoteOwned {
+            accept_time: self.accept_time,
+            sequence_counter: sequence_counter,
+            issue_code: code,
+            bids: self.bids.map(|b| (str_to_fixed::<10>(b.price), str_to_fixed::<10>(b.qty))),
+            asks: self.asks.map(|a| (str_to_fixed::<10>(a.price), str_to_fixed::<10>(a.qty))),
+        }
+    }
+
     #[inline(always)]
     pub fn from_bytes(payload: &'packet [u8], layout: &protocol::QuoteLayout) -> Option<Self> {
         if payload.len() <= layout.end_of_msg_offset {
@@ -37,7 +89,7 @@ impl<'packet> Quote<'packet> {
             let slice = payload.get_unchecked(start..start + len);
             std::str::from_utf8_unchecked(slice)
         };
-        
+
         let base_b = layout.bids_offset;
         let base_a = layout.asks_offset;
         let step = layout.level_length;
@@ -78,11 +130,15 @@ impl<'packet> Quote<'packet> {
             },
         ];
 
+        let time_str = s(layout.accept_time_offset, layout.accept_time_length);
+        let accept_time =
+            time_str.as_bytes().iter().fold(0u64, |acc, &b| acc * 10 + (b - b'0') as u64);
+
         Some(Quote {
             issue_code: s(layout.issue_code_offset, layout.issue_code_length),
             bids,
             asks,
-            accept_time: s(layout.accept_time_offset, layout.accept_time_length),
+            accept_time,
         })
     }
 }
