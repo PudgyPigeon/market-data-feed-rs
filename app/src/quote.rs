@@ -31,23 +31,22 @@ pub struct QuoteOwned {
 }
 
 impl Ord for QuoteOwned {
-    // By flipping self and other comparison order we turn BinaryMaxHeap into MinHeap
     fn cmp(&self, other: &Self) -> Ordering {
-        match other.accept_time.cmp(&self.accept_time) {
-            // If times are equal, check sequence
-            Ordering::Equal => other.sequence_counter.cmp(&self.sequence_counter),
-            // Otherwise return Ord time comparison
-            ord => ord,
-        }
+        // Chain the comparisons: if the first is Equal, move to the next.
+        other
+            .pkt_sec
+            .cmp(&self.pkt_sec)
+            .then_with(|| other.pkt_usec.cmp(&self.pkt_usec))
+            .then_with(|| other.sequence_counter.cmp(&self.sequence_counter))
     }
 }
 
 impl PartialOrd for QuoteOwned {
+    #[inline]
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
-
 // To avoid heap allocation
 fn str_to_fixed<const N: usize>(s: &str) -> [u8; N] {
     let mut arr = [0u8; N];
