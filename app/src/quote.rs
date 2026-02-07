@@ -53,7 +53,7 @@ fn str_to_fixed<const N: usize>(s: &str) -> [u8; N] {
 }
 
 impl<'packet> Quote<'packet> {
-    pub fn to_owned(&self, sequence_counter: u64) -> QuoteOwned {
+    pub fn to_owned(self, sequence_counter: u64) -> QuoteOwned {
         let mut code = [0u8; 12];
         let bytes = self.issue_code.as_bytes();
         let len = bytes.len().min(12);
@@ -77,7 +77,6 @@ impl<'packet> Quote<'packet> {
         if payload.len() <= layout.end_of_msg_offset {
             return None;
         }
-
         // SAFETY: Validated payload length above already so no need for bounds check (?)
         unsafe {
             let ptr = payload.as_ptr();

@@ -1,9 +1,11 @@
+use crate::protocol::{KOSPI_LAYOUT, QuoteLayout};
 use std::path::{Path, PathBuf};
 
 pub struct Config {
     pub reorder: bool,
     pub input_path: PathBuf,
     pub packet_offset: usize,
+    pub quote_layout: &'static QuoteLayout,
 }
 
 impl Config {
@@ -12,6 +14,7 @@ impl Config {
             reorder: false,
             input_path: PathBuf::from("app/assets/mdf-kospi200.20110216-0.pcap"),
             packet_offset: 42,
+            quote_layout: &KOSPI_LAYOUT,
         }
     }
 
@@ -23,6 +26,13 @@ impl Config {
         self.input_path = path;
     }
 
+    // For future implementation of more quote layouts
+    // This is unused for now since we only want KOSPI atm
+    // We would put that match statement below with flag --spec or --layout or something
+    // fn set_quote_layout(&mut self, quote_layout: &'static QuoteLayout) {
+    //     self.quote_layout = quote_layout;
+    // }
+
     fn is_pcap_file(arg: &str) -> bool {
         Path::new(arg).extension().is_some_and(|ext| ext == "pcap")
     }
@@ -32,6 +42,7 @@ impl Config {
         for arg in args.skip(1) {
             match arg.as_str() {
                 "-r" => config.set_reorder(true),
+                // TODO: add a new flag here for specifying layout to load in
                 path if !path.starts_with('-') && Self::is_pcap_file(path) => {
                     config.set_input_path(PathBuf::from(path))
                 }

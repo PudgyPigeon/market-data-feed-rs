@@ -1,5 +1,5 @@
 // This is system/compuer level setup for memory usage
-pub const MAX_ID_LEN: usize = 20; // Sacrifice memory for speed
+pub const MAX_ID_LEN: usize = 12; //20; Sacrifice memory for speed
 pub const MAX_VAL_LEN: usize = 12; // Price/qty probably not above 12 digits
 
 // Below is definition of packet reading/parsing
