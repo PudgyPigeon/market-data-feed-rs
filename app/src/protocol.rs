@@ -13,6 +13,7 @@ pub struct QuoteLayout {
     pub issue_code_length: usize,
     pub price_length: usize,
     pub qty_length: usize,
+    #[allow(dead_code)]
     pub accept_time_length: usize,
     pub level_length: usize,
     pub end_of_msg_val: u8,

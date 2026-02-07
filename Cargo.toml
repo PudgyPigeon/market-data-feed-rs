@@ -13,3 +13,5 @@ opt-level = 3
 codegen-units = 1
 lto = "fat"
 panic = "abort"
+strip = true        # Automatically removes symbols (saves space, slightly faster load)
+incremental = false # Disable incremental for a cleaner, more optimized final pass

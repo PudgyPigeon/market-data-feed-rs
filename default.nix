@@ -17,7 +17,7 @@ let
   
   # 5. The Shell
   # We pass dev-script explicitly from the automation set
-  shell = pkgs.callPackage ./nix/shell.nix { inherit app dependencies; dev-script = automation.dev-script; };
+  shell = pkgs.callPackage ./nix/shell.nix { inherit app dependencies; automation = automation; };
 in
 {
   inherit app shell;

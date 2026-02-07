@@ -65,7 +65,29 @@ let
         -- "$@"
   '';
 
+  release-script = pkgs.writeShellScriptBin "release" ''
+    ${setup-env}
+    ENV="release"
+    
+    echo -e "--------------------------------------------------"
+    echo -e "🚀 ''${B_WHITE}MARKET DATA FEED: PRODUCTION RELEASE''${NC}"
+    echo -e "--------------------------------------------------"
+
+    ${common-ci}
+
+    echo -e "📦 ''${B_CYAN}[5/5] Building Optimized Binary...''${NC}"
+    RUSTFLAGS="-C target-cpu=native" ${rustToolChain}/bin/cargo build \
+      --release \
+      --manifest-path Cargo.toml
+
+    echo -e "\n✨ ''${B_GREEN}Build Complete!''${NC}"
+    echo -e "''${GRAY}Running optimized binary...''${NC}\n"
+
+    # Use 'exec' to replace the shell process with the binary for better signal handling
+    exec target/release/market-data-feed-rs "$@"
+  '';
+
 in
 {
-  inherit dev-script;
+  inherit dev-script release-script;
 }

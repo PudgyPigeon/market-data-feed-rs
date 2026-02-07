@@ -5,10 +5,14 @@ mod protocol;
 mod quote;
 mod strategy;
 use config::Config;
+use mimalloc::MiMalloc;
 use pcap::{Capture, Offline};
 use std::env;
 use std::time::Instant;
 use strategy::ProcessingStrategy;
+
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
 
 // The 'TYPE' Strategy must implement the ProcessingStrategy 'TRAIT'
 // Sequence counter for time ordering

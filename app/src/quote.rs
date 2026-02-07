@@ -58,6 +58,19 @@ fn str_to_fixed<const N: usize>(s: &str) -> [u8; N] {
 }
 
 impl<'packet> Quote<'packet> {
+    #[inline(always)]
+    fn parse_8_digits_swar(s: &[u8]) -> u64 {
+        let val = unsafe { std::ptr::read_unaligned(s.as_ptr() as *const u64) };
+
+        let masked = val.wrapping_sub(0x3030303030303030);
+
+        let mul1 = (masked & 0x00FF00FF00FF00FF).wrapping_mul(0x000A0001000A0001) >> 8;
+        let mul2 = (mul1 & 0x0000FFFF0000FFFF).wrapping_mul(0x0064000100640001) >> 16;
+
+        // Directly return the expression to satisfy clippy::let-and-return
+        (mul2 & 0x00000000FFFFFFFF).wrapping_mul(0x2710000100000000) >> 32
+    }
+
     pub fn to_owned(self, sequence_counter: u64) -> QuoteOwned {
         QuoteOwned {
             pkt_sec: self.pkt_sec,
@@ -76,20 +89,36 @@ impl<'packet> Quote<'packet> {
 
     #[inline(always)]
     pub fn from_bytes(payload: &'packet [u8], layout: &QuoteLayout, ts: timeval) -> Option<Self> {
+        // Validation: Ensure we can at least check the header and end-of-message byte
         if payload.len() <= layout.end_of_msg_offset {
             return None;
         }
-        // SAFETY: Validated payload length above already so no need for bounds check (?)
+
         unsafe {
             let ptr = payload.as_ptr();
+            let header = std::ptr::read_unaligned(ptr as *const [u8; 5]);
 
-            if std::ptr::read(ptr as *const [u8; 5]) != *layout.header_val
-                || *ptr.add(layout.end_of_msg_offset) != layout.end_of_msg_val
-            {
+            if header != *layout.header_val {
+                #[cfg(debug_assertions)]
+                {
+                    static mut UNKNOWN_COUNT: u64 = 0;
+                    UNKNOWN_COUNT += 1;
+                    if UNKNOWN_COUNT <= 5 {
+                        eprintln!(
+                            "DEBUG: Skipping header: {:?}",
+                            std::str::from_utf8_unchecked(&header)
+                        );
+                    }
+                }
+                return None;
+            }
+
+            if *ptr.add(layout.end_of_msg_offset) != layout.end_of_msg_val {
                 return None;
             }
         }
 
+        // Zero-copy string helper
         let s = |start, len| unsafe {
             let slice = payload.get_unchecked(start..start + len);
             std::str::from_utf8_unchecked(slice)
@@ -101,6 +130,7 @@ impl<'packet> Quote<'packet> {
         let p_len = layout.price_length;
         let q_len = layout.qty_length;
 
+        // Unrolled Bids
         let bids = [
             PriceQty { price: s(base_b, p_len), qty: s(base_b + p_len, q_len) },
             PriceQty { price: s(base_b + step, p_len), qty: s(base_b + step + p_len, q_len) },
@@ -118,6 +148,7 @@ impl<'packet> Quote<'packet> {
             },
         ];
 
+        // Unrolled Asks
         let asks = [
             PriceQty { price: s(base_a, p_len), qty: s(base_a + p_len, q_len) },
             PriceQty { price: s(base_a + step, p_len), qty: s(base_a + step + p_len, q_len) },
@@ -135,9 +166,14 @@ impl<'packet> Quote<'packet> {
             },
         ];
 
-        let time_str = s(layout.accept_time_offset, layout.accept_time_length);
-        let accept_time =
-            time_str.as_bytes().iter().fold(0u64, |acc, &b| acc * 10 + (b - b'0') as u64);
+        // --- SWAR Time Parsing ---
+        // We read exactly 8 bytes for the SWAR math.
+        // Ensure your layout.accept_time_length is actually 8!
+        let accept_time = unsafe {
+            let time_slice =
+                payload.get_unchecked(layout.accept_time_offset..layout.accept_time_offset + 8);
+            Self::parse_8_digits_swar(time_slice)
+        };
 
         Some(Quote {
             pkt_sec: ts.tv_sec,

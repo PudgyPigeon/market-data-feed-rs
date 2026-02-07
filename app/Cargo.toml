@@ -7,6 +7,7 @@ edition = "2024"
 pcap = "2.4.0"
 libc= "0.2.180"
 itoa = "1.0.17"
+mimalloc = "0.1.48"
 
 [dev-dependencies]
 # criterion = { version = "0.5", features = ["html_reports"] }
