@@ -28,6 +28,15 @@ dev -r
 # All three work!
 ```
 
+You can also run the release build but it's fairly similar in performance:
+```
+release
+# OR
+release -R
+# OR
+release > /dev/null
+```
+
 ## How to output to CSV and check line numbers
 ```
 dev > output.csv
