@@ -22,7 +22,7 @@ dev
 ```
 Enter the above command to run the command with the associated `.pcap` file.
 
-You can also add an optional `-r` flag before or after the input path to reverse the order
+You can also add an optional `-r` flag before or after the input path to reorder.
 
 ```
 dev -r app/assets/mdf-kospi200.20110216-0.pcap 
@@ -42,7 +42,7 @@ You can also run the release build but it's fairly similar in performance:
 ```
 release
 # OR
-release -R
+release -r
 # OR
 release > /dev/null
 ```
