@@ -8,7 +8,7 @@ use pcap::Capture;
 use std::env;
 
 fn run(config: Config) {
-    debug_init!(count)
+    debug_init!(count);
 
     let mut cap = Capture::from_file(&config.input_path)
         .expect("ERROR: Could not open pcap file or invalid path");
