@@ -1,4 +1,5 @@
 use crate::protocol::{MAX_ID_LEN, MAX_VAL_LEN, QuoteLayout};
+use libc::timeval;
 use std::cmp::Ordering;
 use std::str;
 
@@ -10,14 +11,18 @@ pub struct PriceQty<'packet> {
 
 #[derive(Debug, Copy, Clone)]
 pub struct Quote<'packet> {
+    pub pkt_sec: i64,
+    pub pkt_usec: i64,
+    pub accept_time: u64, // HHMMSSuu
     pub issue_code: &'packet str,
     pub bids: [PriceQty<'packet>; 5],
     pub asks: [PriceQty<'packet>; 5],
-    pub accept_time: u64, // HHMMSSuu
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Copy)]
 pub struct QuoteOwned {
+    pub pkt_sec: i64,
+    pub pkt_usec: i64,
     pub accept_time: u64,
     pub sequence_counter: u64,
     pub issue_code: [u8; MAX_ID_LEN],
@@ -54,12 +59,9 @@ fn str_to_fixed<const N: usize>(s: &str) -> [u8; N] {
 
 impl<'packet> Quote<'packet> {
     pub fn to_owned(self, sequence_counter: u64) -> QuoteOwned {
-        let mut code = [0u8; 12];
-        let bytes = self.issue_code.as_bytes();
-        let len = bytes.len().min(12);
-        code[..len].copy_from_slice(&bytes[..len]);
-
         QuoteOwned {
+            pkt_sec: self.pkt_sec,
+            pkt_usec: self.pkt_usec,
             accept_time: self.accept_time,
             sequence_counter,
             issue_code: str_to_fixed::<MAX_ID_LEN>(self.issue_code),
@@ -73,7 +75,7 @@ impl<'packet> Quote<'packet> {
     }
 
     #[inline(always)]
-    pub fn from_bytes(payload: &'packet [u8], layout: &QuoteLayout) -> Option<Self> {
+    pub fn from_bytes(payload: &'packet [u8], layout: &QuoteLayout, ts: timeval) -> Option<Self> {
         if payload.len() <= layout.end_of_msg_offset {
             return None;
         }
@@ -138,10 +140,12 @@ impl<'packet> Quote<'packet> {
             time_str.as_bytes().iter().fold(0u64, |acc, &b| acc * 10 + (b - b'0') as u64);
 
         Some(Quote {
+            pkt_sec: ts.tv_sec,
+            pkt_usec: ts.tv_usec,
+            accept_time,
             issue_code: s(layout.issue_code_offset, layout.issue_code_length),
             bids,
             asks,
-            accept_time,
         })
     }
 }

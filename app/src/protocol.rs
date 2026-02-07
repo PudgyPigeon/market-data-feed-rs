@@ -22,7 +22,7 @@ pub const KOSPI_LAYOUT: QuoteLayout = QuoteLayout {
     header_val: b"B6034",
     issue_code_offset: 5,
     bids_offset: 29,
-    asks_offset: 121,
+    asks_offset: 96,
     accept_time_offset: 206,
     end_of_msg_offset: 214,
     issue_code_length: 12, // Must be <= MAX_ID_LEN
@@ -32,7 +32,6 @@ pub const KOSPI_LAYOUT: QuoteLayout = QuoteLayout {
     level_length: 12,
     end_of_msg_val: 0xff,
 };
-
 // Should not run, just for compiler to check that there is a guard
 // This block ensures our internal buffers are always
 // large enough for the defined KOSPI layout.

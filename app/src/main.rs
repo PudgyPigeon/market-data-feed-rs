@@ -3,33 +3,37 @@ mod debug;
 mod processor;
 mod protocol;
 mod quote;
+mod strategy;
 use config::Config;
-use pcap::Capture;
+use pcap::{Capture, Offline};
 use std::env;
 use std::time::Instant;
+use strategy::ProcessingStrategy;
+
+// The 'TYPE' Strategy must implement the ProcessingStrategy 'TRAIT'
+// Sequence counter for time ordering
+fn loop_packets<Strategy: ProcessingStrategy>(
+    cap: &mut Capture<Offline>,
+    processor: &mut processor::Processor,
+    strategy: Strategy,
+) {
+    let mut sequence_counter: u64 = 0;
+    while let Ok(packet) = cap.next_packet() {
+        processor.process_packet(&strategy, &packet, sequence_counter);
+        sequence_counter += 1;
+    }
+}
 
 fn run(config: Config) {
     let mut cap = Capture::from_file(&config.input_path).unwrap();
-    let mut processor =
-        processor::Processor::new(config.reorder, config.quote_layout, config.packet_offset);
-    let mut sequence_counter: u64 = 0;
+    let mut processor = processor::Processor::new(config.quote_layout, config.packet_offset);
 
-    loop {
-        match cap.next_packet() {
-            Ok(packet) => {
-                processor.process_packet(packet.data, sequence_counter);
-                sequence_counter += 1;
-            }
-            Err(pcap::Error::NoMorePackets) => {
-                eprintln!("Reached the end of the .pcap file. Breaking loop.");
-                break;
-            }
-            Err(e) => {
-                eprintln!("Error reading next packet: {}", e);
-                break;
-            }
-        }
+    if config.reorder {
+        loop_packets(&mut cap, &mut processor, strategy::ReorderMode);
+    } else {
+        loop_packets(&mut cap, &mut processor, strategy::ImmediateMode);
     }
+
     processor.close()
 }
 

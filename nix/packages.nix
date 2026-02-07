@@ -11,7 +11,9 @@ let
   };
 
   appBuild = [
-    pkgs.libpcap
+    pkgs.libpcap,
+    pkgs.libc,
+    pkgs.itoa
   ];
 
   nativeBuild = [

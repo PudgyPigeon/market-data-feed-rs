@@ -12,7 +12,7 @@ dev
 ```
 Enter the above command to run the command with the associated `.pcap` file.
 
-You can also add an optional `-r` flag before or after the input path to reverse the order (To be implemented soon).
+You can also add an optional `-r` flag before or after the input path to reverse the order
 
 ```
 dev -r app/assets/mdf-kospi200.20110216-0.pcap 
@@ -21,5 +21,9 @@ dev -r app/assets/mdf-kospi200.20110216-0.pcap
 
 dev app/assets/mdf-kospi200.20110216-0.pcap -r
 
-# Both work!
+# Or
+
+dev -r
+
+# All three work!
 ```

@@ -26,13 +26,6 @@ impl Config {
         self.input_path = path;
     }
 
-    // For future implementation of more quote layouts
-    // This is unused for now since we only want KOSPI atm
-    // We would put that match statement below with flag --spec or --layout or something
-    // fn set_quote_layout(&mut self, quote_layout: &'static QuoteLayout) {
-    //     self.quote_layout = quote_layout;
-    // }
-
     fn is_pcap_file(arg: &str) -> bool {
         Path::new(arg).extension().is_some_and(|ext| ext == "pcap")
     }
@@ -51,4 +44,10 @@ impl Config {
         }
         config
     }
+    // For future implementation of more quote layouts
+    // This is unused for now since we only want KOSPI atm
+    // We would put that match statement below with flag --spec or --layout or something
+    // fn set_quote_layout(&mut self, quote_layout: &'static QuoteLayout) {
+    //     self.quote_layout = quote_layout;
+    // }
 }
