@@ -66,7 +66,7 @@ Total execution time: 2.561191ms
 perf stat ./target/release/market-data-feed-rs > /dev/null
 ```
 
-## Stress-nG
+## Stress-NG
 ```
 # 1. Start the 'heater' on Core 1 (different from your app's core)
 taskset -c 1 stress-ng --cpu 1 & 
