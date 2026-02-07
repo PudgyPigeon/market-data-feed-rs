@@ -1,4 +1,4 @@
-use crate::protocol;
+use crate::protocol::{MAX_ID_LEN, MAX_VAL_LEN, QuoteLayout};
 use std::cmp::Ordering;
 use std::str;
 
@@ -20,9 +20,9 @@ pub struct Quote<'packet> {
 pub struct QuoteOwned {
     pub accept_time: u64,
     pub sequence_counter: u64,
-    pub issue_code: [u8; 12],
-    pub bids: [([u8; 10], [u8; 10]); 5],
-    pub asks: [([u8; 10], [u8; 10]); 5],
+    pub issue_code: [u8; MAX_ID_LEN],
+    pub bids: [([u8; MAX_VAL_LEN], [u8; MAX_VAL_LEN]); 5],
+    pub asks: [([u8; MAX_VAL_LEN], [u8; MAX_VAL_LEN]); 5],
 }
 
 impl Ord for QuoteOwned {
@@ -61,15 +61,19 @@ impl<'packet> Quote<'packet> {
 
         QuoteOwned {
             accept_time: self.accept_time,
-            sequence_counter: sequence_counter,
-            issue_code: code,
-            bids: self.bids.map(|b| (str_to_fixed::<10>(b.price), str_to_fixed::<10>(b.qty))),
-            asks: self.asks.map(|a| (str_to_fixed::<10>(a.price), str_to_fixed::<10>(a.qty))),
+            sequence_counter,
+            issue_code: str_to_fixed::<MAX_ID_LEN>(self.issue_code),
+            bids: self.bids.map(|b| {
+                (str_to_fixed::<MAX_VAL_LEN>(b.price), str_to_fixed::<MAX_VAL_LEN>(b.qty))
+            }),
+            asks: self.asks.map(|a| {
+                (str_to_fixed::<MAX_VAL_LEN>(a.price), str_to_fixed::<MAX_VAL_LEN>(a.qty))
+            }),
         }
     }
 
     #[inline(always)]
-    pub fn from_bytes(payload: &'packet [u8], layout: &protocol::QuoteLayout) -> Option<Self> {
+    pub fn from_bytes(payload: &'packet [u8], layout: &QuoteLayout) -> Option<Self> {
         if payload.len() <= layout.end_of_msg_offset {
             return None;
         }
