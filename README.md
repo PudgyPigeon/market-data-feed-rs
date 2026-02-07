@@ -1,8 +1,18 @@
-# How to Run
+## Notes TODO
+Clean up codebase - it's a bit ugly
 
-After the nix-shell starts up you should see a prompt telling you to run the "dev" command.
+# How to Run
+If you have Nix and DirEnv on your Linux or WSL distro ready to go, the nix-shell will start automatically.
+
+If not, you might just have to run `nix-shell` in your terminal at the root of this repo.
+
+After the nix-shell starts up you should see a prompt telling you to run the "dev" or "release" command.
+
+There are hardcoded defaults inside of the various config objects but you can run the program as follows:
+- Note: Running just cargo build or cargo run without Nix would probably work but not tested
 
 ```
+# In your terminal
 dev app/assets/mdf-kospi200.20110216-0.pcap 
 
 # OR 

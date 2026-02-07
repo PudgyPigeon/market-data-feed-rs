@@ -124,46 +124,35 @@ impl<'packet> Quote<'packet> {
             std::str::from_utf8_unchecked(slice)
         };
 
-        let base_b = layout.bids_offset;
-        let base_a = layout.asks_offset;
         let step = layout.level_length;
         let p_len = layout.price_length;
         let q_len = layout.qty_length;
 
-        // Unrolled Bids
+        macro_rules! parse_level {
+            ($base_offset:expr, $idx:expr) => {
+                PriceQty {
+                    price: s($base_offset + (step * $idx), p_len),
+                    qty: s($base_offset + (step * $idx) + p_len, q_len),
+                }
+            };
+        }
+
+        let base_b = layout.bids_offset;
         let bids = [
-            PriceQty { price: s(base_b, p_len), qty: s(base_b + p_len, q_len) },
-            PriceQty { price: s(base_b + step, p_len), qty: s(base_b + step + p_len, q_len) },
-            PriceQty {
-                price: s(base_b + step * 2, p_len),
-                qty: s(base_b + step * 2 + p_len, q_len),
-            },
-            PriceQty {
-                price: s(base_b + step * 3, p_len),
-                qty: s(base_b + step * 3 + p_len, q_len),
-            },
-            PriceQty {
-                price: s(base_b + step * 4, p_len),
-                qty: s(base_b + step * 4 + p_len, q_len),
-            },
+            parse_level!(base_b, 0),
+            parse_level!(base_b, 1),
+            parse_level!(base_b, 2),
+            parse_level!(base_b, 3),
+            parse_level!(base_b, 4),
         ];
 
-        // Unrolled Asks
+        let base_a = layout.asks_offset;
         let asks = [
-            PriceQty { price: s(base_a, p_len), qty: s(base_a + p_len, q_len) },
-            PriceQty { price: s(base_a + step, p_len), qty: s(base_a + step + p_len, q_len) },
-            PriceQty {
-                price: s(base_a + step * 2, p_len),
-                qty: s(base_a + step * 2 + p_len, q_len),
-            },
-            PriceQty {
-                price: s(base_a + step * 3, p_len),
-                qty: s(base_a + step * 3 + p_len, q_len),
-            },
-            PriceQty {
-                price: s(base_a + step * 4, p_len),
-                qty: s(base_a + step * 4 + p_len, q_len),
-            },
+            parse_level!(base_a, 0),
+            parse_level!(base_a, 1),
+            parse_level!(base_a, 2),
+            parse_level!(base_a, 3),
+            parse_level!(base_a, 4),
         ];
 
         // --- SWAR Time Parsing ---
