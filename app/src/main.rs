@@ -7,8 +7,10 @@ mod strategy;
 use config::Config;
 use mimalloc::MiMalloc;
 use pcap::{Capture, Offline};
+use processor::Processor;
 use std::env;
 use strategy::{ProcessingStrategy, StrategyType};
+
 
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
@@ -16,7 +18,7 @@ static GLOBAL: MiMalloc = MiMalloc;
 
 fn loop_packets<Strategy: ProcessingStrategy>(
     cap: &mut Capture<Offline>,
-    processor: &mut processor::Processor,
+    processor: &mut Processor,
     strategy: Strategy,
 ) {
     let mut sequence_counter: u64 = 0;
@@ -26,9 +28,10 @@ fn loop_packets<Strategy: ProcessingStrategy>(
     }
 }
 
+
 fn run(config: Config) {
     let mut cap = Capture::from_file(&config.input_path).unwrap();
-    let mut processor = processor::Processor::new(config.quote_layout, config.packet_offset);
+    let mut processor = Processor::new(config.quote_layout, config.packet_offset);
 
     match config.strategy {
         StrategyType::ImmediateMode(s) => loop_packets(&mut cap, &mut processor, s),
@@ -37,6 +40,7 @@ fn run(config: Config) {
 
     processor.close()
 }
+
 
 fn main() {
     run(Config::build_from_args(env::args()));
