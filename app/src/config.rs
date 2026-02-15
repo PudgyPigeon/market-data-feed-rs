@@ -1,8 +1,9 @@
 use crate::protocol::{KOSPI_LAYOUT, QuoteLayout};
+use crate::strategy::{ImmediateMode, ReorderMode, StrategyType};
 use std::path::{Path, PathBuf};
 
 pub struct Config {
-    pub reorder: bool,
+    pub strategy: StrategyType,
     pub input_path: PathBuf,
     pub packet_offset: usize,
     pub quote_layout: &'static QuoteLayout,
@@ -11,7 +12,7 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            reorder: false,
+            strategy: StrategyType::ImmediateMode(ImmediateMode),
             input_path: PathBuf::from("app/assets/mdf-kospi200.20110216-0.pcap"),
             packet_offset: 42,
             quote_layout: &KOSPI_LAYOUT,
@@ -20,8 +21,8 @@ impl Default for Config {
 }
 
 impl Config {
-    pub fn reorder(mut self, val: bool) -> Self {
-        self.reorder = val;
+    pub fn strategy(mut self, val: StrategyType) -> Self {
+        self.strategy = val;
         self
     }
 
@@ -43,7 +44,9 @@ impl Config {
 
         while let Some(arg) = args.next() {
             match arg.as_str() {
-                "-r" | "--reorder" => config = config.reorder(true),
+                "-r" | "--reorder" => {
+                    config = config.strategy(StrategyType::ReorderMode(ReorderMode))
+                }
                 // Example of adding a new flag with a value
                 "-l" | "--layout" => {
                     if let Some(_layout_name) = args.next() {

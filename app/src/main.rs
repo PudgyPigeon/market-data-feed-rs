@@ -8,13 +8,12 @@ use config::Config;
 use mimalloc::MiMalloc;
 use pcap::{Capture, Offline};
 use std::env;
-use strategy::ProcessingStrategy;
+use strategy::{ProcessingStrategy, StrategyType};
 
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
-// The 'TYPE' Strategy must implement the ProcessingStrategy 'TRAIT'
-// Sequence counter for time ordering
+
 fn loop_packets<Strategy: ProcessingStrategy>(
     cap: &mut Capture<Offline>,
     processor: &mut processor::Processor,
@@ -31,10 +30,9 @@ fn run(config: Config) {
     let mut cap = Capture::from_file(&config.input_path).unwrap();
     let mut processor = processor::Processor::new(config.quote_layout, config.packet_offset);
 
-    if config.reorder {
-        loop_packets(&mut cap, &mut processor, strategy::ReorderMode);
-    } else {
-        loop_packets(&mut cap, &mut processor, strategy::ImmediateMode);
+    match config.strategy {
+        StrategyType::ImmediateMode(s) => loop_packets(&mut cap, &mut processor, s),
+        StrategyType::ReorderMode(s) => loop_packets(&mut cap, &mut processor, s),
     }
 
     processor.close()
