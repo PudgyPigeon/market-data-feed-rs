@@ -8,8 +8,8 @@ pub struct Config {
     pub quote_layout: &'static QuoteLayout,
 }
 
-impl Config {
-    fn new() -> Self {
+impl Default for Config {
+    fn default() -> Self {
         Self {
             reorder: false,
             input_path: PathBuf::from("app/assets/mdf-kospi200.20110216-0.pcap"),
@@ -17,37 +17,45 @@ impl Config {
             quote_layout: &KOSPI_LAYOUT,
         }
     }
+}
 
-    fn set_reorder(&mut self, val: bool) {
+impl Config {
+    pub fn reorder(mut self, val: bool) -> Self {
         self.reorder = val;
+        self
     }
 
-    fn set_input_path(&mut self, path: PathBuf) {
-        self.input_path = path;
+    pub fn input_path<P: Into<PathBuf>>(mut self, path: P) -> Self {
+        self.input_path = path.into();
+        self
     }
 
-    fn is_pcap_file(arg: &str) -> bool {
-        Path::new(arg).extension().is_some_and(|ext| ext == "pcap")
+    fn is_pcap_file(path: &str) -> bool {
+        Path::new(path).extension().is_some_and(|ext| ext == "pcap")
     }
 
-    pub fn build<I: Iterator<Item = String>>(args: I) -> Self {
-        let mut config = Self::new();
-        for arg in args.skip(1) {
+    pub fn build_from_args<I>(args: I) -> Self
+    where
+        I: IntoIterator<Item = String>,
+    {
+        let mut config = Self::default();
+        let mut args = args.into_iter().skip(1);
+
+        while let Some(arg) = args.next() {
             match arg.as_str() {
-                "-r" => config.set_reorder(true),
-                // TODO: add a new flag here for specifying layout to load in
-                path if !path.starts_with('-') && Self::is_pcap_file(path) => {
-                    config.set_input_path(PathBuf::from(path))
+                "-r" | "--reorder" => config = config.reorder(true),
+                // Example of adding a new flag with a value
+                "-l" | "--layout" => {
+                    if let Some(_layout_name) = args.next() {
+                        // Logic to match layout name to QuoteLayout
+                    }
                 }
-                _ => eprintln!("Unknown argument: '{}'", arg),
+                path if !path.starts_with('-') && Self::is_pcap_file(path) => {
+                    config = config.input_path(path);
+                }
+                _ => eprintln!("Warning: Unknown argument '{}'", arg),
             }
         }
         config
     }
-    // For future implementation of more quote layouts
-    // This is unused for now since we only want KOSPI atm
-    // We would put that match statement below with flag --spec or --layout or something
-    // fn set_quote_layout(&mut self, quote_layout: &'static QuoteLayout) {
-    //     self.quote_layout = quote_layout;
-    // }
 }

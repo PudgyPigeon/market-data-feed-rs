@@ -8,7 +8,6 @@ use config::Config;
 use mimalloc::MiMalloc;
 use pcap::{Capture, Offline};
 use std::env;
-use std::time::Instant;
 use strategy::ProcessingStrategy;
 
 #[global_allocator]
@@ -42,7 +41,5 @@ fn run(config: Config) {
 }
 
 fn main() {
-    let start = Instant::now();
-    run(Config::build(env::args()));
-    eprintln!("Total execution time: {:?}", start.elapsed());
+    run(Config::build_from_args(env::args()));
 }
