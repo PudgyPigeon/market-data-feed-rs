@@ -32,7 +32,6 @@ pub struct QuoteOwned {
 
 impl Ord for QuoteOwned {
     fn cmp(&self, other: &Self) -> Ordering {
-        // Chain the comparisons: if the first is Equal, move to the next.
         other
             .pkt_sec
             .cmp(&self.pkt_sec)

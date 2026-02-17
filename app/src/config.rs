@@ -47,12 +47,7 @@ impl Config {
                 "-r" | "--reorder" => {
                     config = config.strategy(StrategyType::ReorderMode(ReorderMode))
                 }
-                // Example of adding a new flag with a value
-                "-l" | "--layout" => {
-                    if let Some(_layout_name) = args.next() {
-                        // Logic to match layout name to QuoteLayout
-                    }
-                }
+                "-l" | "--layout" => if let Some(_layout_name) = args.next() {},
                 path if !path.starts_with('-') && Self::is_pcap_file(path) => {
                     config = config.input_path(path);
                 }

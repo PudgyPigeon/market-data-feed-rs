@@ -1,47 +1,39 @@
 mod config;
-mod debug;
 mod processor;
 mod protocol;
 mod quote;
 mod strategy;
 use config::Config;
 use mimalloc::MiMalloc;
-use pcap::{Capture, Offline};
+use pcap::Capture;
 use processor::Processor;
 use std::env;
-use strategy::{ProcessingStrategy, StrategyType};
-
+use strategy::StrategyType;
 
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
-
-fn loop_packets<Strategy: ProcessingStrategy>(
-    cap: &mut Capture<Offline>,
-    processor: &mut Processor,
-    strategy: Strategy,
-) {
-    let mut sequence_counter: u64 = 0;
-    while let Ok(packet) = cap.next_packet() {
-        processor.process_packet(&strategy, &packet, sequence_counter);
-        sequence_counter += 1;
-    }
-}
-
-
-fn run(config: Config) {
+fn main() {
+    
+    let config = Config::build_from_args(env::args());
     let mut cap = Capture::from_file(&config.input_path).unwrap();
     let mut processor = Processor::new(config.quote_layout, config.packet_offset);
+    let mut sequence_counter: u64 = 0;
 
     match config.strategy {
-        StrategyType::ImmediateMode(s) => loop_packets(&mut cap, &mut processor, s),
-        StrategyType::ReorderMode(s) => loop_packets(&mut cap, &mut processor, s),
+        StrategyType::ImmediateMode(strategy) => {
+            while let Ok(packet) = cap.next_packet() {
+                processor.process_packet(&strategy, &packet, sequence_counter);
+                sequence_counter += 1;
+            }
+        }
+        StrategyType::ReorderMode(strategy) => {
+            while let Ok(packet) = cap.next_packet() {
+                processor.process_packet(&strategy, &packet, sequence_counter);
+                sequence_counter += 1;
+            }
+        }
     }
 
     processor.close()
-}
-
-
-fn main() {
-    run(Config::build_from_args(env::args()));
 }

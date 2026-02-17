@@ -88,42 +88,33 @@ impl Processor {
     pub fn print_owned(&mut self, q: &QuoteOwned) {
         self.line_buf.clear();
         let b = &mut self.line_buf;
-        let itoa = &mut self.itoa_buf; // Make sure this is in your struct
+        let itoa = &mut self.itoa_buf;
 
-        // 1. Timestamps - Manual placement is faster than write! macro
         b.extend_from_slice(itoa.format(q.pkt_sec).as_bytes());
         b.push(b'.');
 
-        // For usec, if you need the leading zeros (e.g. .000123),
-        // the write! macro is actually easier/safer here:
         let _ = write!(b, "{:06}", q.pkt_usec);
 
         b.push(b',');
         b.extend_from_slice(itoa.format(q.accept_time).as_bytes());
         b.push(b',');
 
-        // 2. Issue Code (Fixed-size array)
         let code = &q.issue_code;
         let code_len = code.iter().position(|&x| x == b' ' || x == 0).unwrap_or(code.len());
         b.extend_from_slice(&code[..code_len]);
 
-        // 3. The Ladder (Direct memory copies)
         for i in (0..5).rev() {
             b.push(b',');
             let (p_arr, q_arr) = &q.bids[i];
 
-            // Qty
             let q_len = q_arr.iter().position(|&x| x == b' ' || x == 0).unwrap_or(q_arr.len());
             b.extend_from_slice(&q_arr[..q_len]);
 
             b.push(b',');
 
-            // Price
             let p_len = p_arr.iter().position(|&x| x == b' ' || x == 0).unwrap_or(p_arr.len());
             b.extend_from_slice(&p_arr[..p_len]);
         }
-
-        // ... Repeat for asks ...
 
         b.push(b'\n');
         let _ = self.writer.write_all(b);
@@ -131,14 +122,11 @@ impl Processor {
 
     pub fn print_borrowed(&mut self, q: &Quote) {
         let w = &mut self.writer;
-        // Use a local scratchpad (pre-allocated in the struct for speed)
         self.line_buf.clear();
         let buf = &mut self.line_buf;
 
-        // Format the dynamic timestamps into the scratchpad
         let _ = write!(buf, "{}.{:06},{},", q.pkt_sec, q.pkt_usec, q.accept_time);
 
-        //  Direct memory copies for the rest (No formatting logic)
         buf.extend_from_slice(q.issue_code.as_bytes());
 
         for i in (0..5).rev() {
@@ -147,10 +135,8 @@ impl Processor {
             buf.push(b',');
             buf.extend_from_slice(q.bids[i].price.as_bytes());
         }
-        // ... repeat for asks ...
         buf.push(b'\n');
 
-        // 3. One single I/O operation for the whole line
         let _ = w.write_all(buf);
     }
 }
