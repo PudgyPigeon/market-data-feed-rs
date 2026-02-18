@@ -19,7 +19,7 @@ pub struct Quote<'packet> {
     pub asks: [PriceQty<'packet>; 5],
 }
 
-#[derive(Debug, Eq, PartialEq, Clone, Copy)]
+#[derive(Debug, Eq, PartialEq, Clone, Copy, Default)]
 pub struct QuoteOwned {
     pub pkt_sec: i64,
     pub pkt_usec: i64,

@@ -1,4 +1,7 @@
+mod buffer;
 mod config;
+mod formatter;
+mod parse_time;
 mod processor;
 mod protocol;
 mod quote;
@@ -8,13 +11,14 @@ use mimalloc::MiMalloc;
 use pcap::Capture;
 use processor::Processor;
 use std::env;
+use std::time::Instant;
 use strategy::StrategyType;
 
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
 fn main() {
-    
+    let start = Instant::now();
     let config = Config::build_from_args(env::args());
     let mut cap = Capture::from_file(&config.input_path).unwrap();
     let mut processor = Processor::new(config.quote_layout, config.packet_offset);
@@ -35,5 +39,6 @@ fn main() {
         }
     }
 
-    processor.close()
+    processor.close();
+    eprintln!("Total execution time: {:?}", start.elapsed());
 }
